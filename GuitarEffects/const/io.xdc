@@ -1,0 +1,42 @@
+set_property IOSTANDARD LVCMOS33 [get_ports sys_clock]
+set_property PACKAGE_PIN Y9 [get_ports sys_clock]
+set_property PACKAGE_PIN P16 [get_ports reset_rtl]
+set_property IOSTANDARD LVCMOS33 [get_ports reset_rtl]
+
+
+
+
+
+
+set_property IOSTANDARD LVCMOS33 [get_ports {GainSettingxSI_0[3]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {GainSettingxSI_0[2]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {GainSettingxSI_0[1]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {GainSettingxSI_0[0]}]
+set_property IOSTANDARD LVCMOS33 [get_ports AD_LRCK_0]
+set_property IOSTANDARD LVCMOS33 [get_ports AD_MCLK_0]
+set_property IOSTANDARD LVCMOS33 [get_ports AD_SDI_0]
+set_property IOSTANDARD LVCMOS33 [get_ports AD_SCLK_0]
+set_property IOSTANDARD LVCMOS33 [get_ports DA_LRCK_0]
+set_property IOSTANDARD LVCMOS33 [get_ports DA_MCLK_0]
+set_property IOSTANDARD LVCMOS33 [get_ports DA_SCLK_0]
+set_property IOSTANDARD LVCMOS33 [get_ports DA_SDO_0]
+set_property PACKAGE_PIN F21 [get_ports {GainSettingxSI_0[3]}]
+set_property PACKAGE_PIN H22 [get_ports {GainSettingxSI_0[2]}]
+set_property PACKAGE_PIN G22 [get_ports {GainSettingxSI_0[1]}]
+set_property PACKAGE_PIN F22 [get_ports {GainSettingxSI_0[0]}]
+set_property PACKAGE_PIN W10 [get_ports AD_LRCK_0]
+set_property PACKAGE_PIN V12 [get_ports AD_MCLK_0]
+set_property PACKAGE_PIN V9 [get_ports AD_SCLK_0]
+set_property PACKAGE_PIN V8 [get_ports AD_SDI_0]
+set_property PACKAGE_PIN W11 [get_ports DA_LRCK_0]
+set_property PACKAGE_PIN W12 [get_ports DA_MCLK_0]
+set_property PACKAGE_PIN V10 [get_ports DA_SCLK_0]
+set_property PACKAGE_PIN W8 [get_ports DA_SDO_0]
+
+set_property DRIVE 4 [get_ports AD_LRCK_0]
+set_property DRIVE 4 [get_ports AD_MCLK_0]
+set_property DRIVE 4 [get_ports AD_SCLK_0]
+set_property DRIVE 4 [get_ports DA_LRCK_0]
+set_property DRIVE 4 [get_ports DA_MCLK_0]
+set_property DRIVE 4 [get_ports DA_SCLK_0]
+set_property DRIVE 4 [get_ports DA_SDO_0]
