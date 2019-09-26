@@ -5,7 +5,6 @@ use ieee.numeric_std.all;
 entity Amplifier_v1_0_S_AUDIO_AXIS is
 	generic (
 		-- Users to add parameters here
-
 		-- User parameters ends
 		-- Do not modify the parameters beyond this line
 
@@ -14,7 +13,10 @@ entity Amplifier_v1_0_S_AUDIO_AXIS is
 	);
 	port (
 		-- Users to add ports here
-
+		ReadFifoxSI : in std_logic;
+		FifoEmptyxSO : out std_logic;
+		FifoFullxSO : out std_logc;
+		DataxDO : out std_logic_vector(C_M_AXIS_TDATA_WIDTH - 1 downto 0);
 		-- User ports ends
 		-- Do not modify the ports beyond this line
 
@@ -36,142 +38,85 @@ entity Amplifier_v1_0_S_AUDIO_AXIS is
 end Amplifier_v1_0_S_AUDIO_AXIS;
 
 architecture arch_imp of Amplifier_v1_0_S_AUDIO_AXIS is
-	-- function called clogb2 that returns an integer which has the 
-	-- value of the ceiling of the log base 2.
-	function clogb2 (bit_depth : integer) return integer is 
-	variable depth  : integer := bit_depth;
-	  begin
-	    if (depth = 0) then
-	      return(0);
-	    else
-	      for clogb2 in 1 to bit_depth loop  -- Works for up to 32 bit integers
-	        if(depth <= 1) then 
-	          return(clogb2);      
-	        else
-	          depth := depth / 2;
-	        end if;
-	      end loop;
-	    end if;
-	end;    
-
-	-- Total number of input data.
-	constant NUMBER_OF_INPUT_WORDS  : integer := 8;
-	-- bit_num gives the minimum number of bits needed to address 'NUMBER_OF_INPUT_WORDS' size of FIFO.
-	constant bit_num  : integer := clogb2(NUMBER_OF_INPUT_WORDS-1);
-	-- Define the states of state machine
-	-- The control state machine oversees the writing of input streaming data to the FIFO,
-	-- and outputs the streaming data from the FIFO
-	type state is ( IDLE,        -- This is the initial/idle state 
-	                WRITE_FIFO); -- In this state FIFO is written with the
-	                             -- input stream data S_AXIS_TDATA 
-	signal axis_tready	: std_logic;
-	-- State variable
-	signal  mst_exec_state : state;  
-	-- FIFO implementation signals
-	signal  byte_index : integer;    
-	-- FIFO write enable
-	signal fifo_wren : std_logic;
-	-- FIFO full flag
-	signal fifo_full_flag : std_logic;
-	-- FIFO write pointer
-	signal write_pointer : integer range 0 to bit_num-1 ;
-	-- sink has accepted all the streaming data and stored in FIFO
-	signal writes_done : std_logic;
-
-	type BYTE_FIFO_TYPE is array (0 to (NUMBER_OF_INPUT_WORDS-1)) of std_logic_vector(((C_S_AXIS_TDATA_WIDTH/4)-1)downto 0);
+	function getVectorSize( maxValue : integer) return integer is
+        variable vectorSize : integer := 1;
+    begin
+        while 2**vectorSize <= maxValue loop
+            vectorSize := vectorSize + 1;
+        end loop;
+        return vectorSize;
+    end getVectorSize;
+    
+    constant FIFO_SIZE : integer := 8;
+    type FifoArray is array(0 to FIFO_SIZE - 1) of std_logic_vector(C_M_AXIS_TDATA_WIDTH - 1 downto 0);
+    signal FifoxDP, FifoxDN : FifoArray;
+    
+    constant FIFO_COUNTER_SIZE : integer := gitVectorSize(FIFO_SIZE);
+    signal FifoWriteCounterxDP, FifoWriteCounterxDN : unsigned(FIFO_COUNTER_SIZE - 1 downto 0);
+    signal FifoReadCounterxDP, FifoReadCounterxDN : unsigned(FIFO_COUNTER_SIZE - 1 downto 0);
+    constant FIFO_COUNTER_MAX_VALUE : unsigned := to_unsigned(FIFO_SIZE, FIFO_COUNTER_SIZE);
 begin
-	-- I/O Connections assignments
-
-	S_AXIS_TREADY	<= axis_tready;
-	-- Control state machine implementation
-	process(S_AXIS_ACLK)
+	DataxDO <= FifoxDP(FifoReadCounterxDP);
+	
+	FifoEmptyxSO <= '0' when FifoWriteCounterxDP = FifoReadCounterxDP else '1';
+	
+	FifoFullxSO <= '1' when FifoWriteCounterxDP + 1 = FifoReadCounterxDP else '0';
+	
+	FifoLogic : process(M_AXIS_TVALID, M_AXIS_TDATA,FifoWriteCounterxDP, FifoxDP)
 	begin
-	  if (rising_edge (S_AXIS_ACLK)) then
-	    if(S_AXIS_ARESETN = '0') then
-	      -- Synchronous reset (active low)
-	      mst_exec_state      <= IDLE;
-	    else
-	      case (mst_exec_state) is
-	        when IDLE     => 
-	          -- The sink starts accepting tdata when 
-	          -- there tvalid is asserted to mark the
-	          -- presence of valid streaming data 
-	          if (S_AXIS_TVALID = '1')then
-	            mst_exec_state <= WRITE_FIFO;
-	          else
-	            mst_exec_state <= IDLE;
-	          end if;
-	      
-	        when WRITE_FIFO => 
-	          -- When the sink has accepted all the streaming input data,
-	          -- the interface swiches functionality to a streaming master
-	          if (writes_done = '1') then
-	            mst_exec_state <= IDLE;
-	          else
-	            -- The sink accepts and stores tdata 
-	            -- into FIFO
-	            mst_exec_state <= WRITE_FIFO;
-	          end if;
-	        
-	        when others    => 
-	          mst_exec_state <= IDLE;
-	        
-	      end case;
-	    end if;  
-	  end if;
+		if(M_AXIS_TVALID = '1') then
+			if(FifoWriteCounterxDP = (FIFO_COUNTER_SIZE - 1 downto 0 => '0')) then
+				FifoxDN(0) <= M_AXIS_TDATA;
+				FifoxDN(1 to FIFO_SIZE - 1) <= FifoxDP(1 to FIFO_SIZE - 1);
+			elsif(FifoWriteCounterxDP = FIFO_COUNTER_MAX_VALUE) then
+				FifoxDN(FIFO_SIZE - 1) <= M_AXIS_TDATA;
+				FifoxDN(0 to FIFO_SIZE - 2) <= FifoxDP(0 to FIFO_SIZE - 2);
+			else
+				FifoxDN(integer(FifoWriteCounterxDP)) <= M_AXIS_TDATA;
+				FifoxDN(0 to integer(FifoWriteCounterxDP) - 1) <= FifoxDP(0 to integer(FifoWriteCounterxDP) - 1);
+				FifoxDN(integer(FifoWriteCounterxDP) + 1 to FIFO_SIZE - 1) <= FifoxDP(integer(FifoWriteCounterxDP) + 1 to FIFO_SIZE - 1);
+			end if;
+		else
+			FifoxDN <= FifoxDP;
+		end if;
 	end process;
-	-- AXI Streaming Sink 
-	-- 
-	-- The example design sink is always ready to accept the S_AXIS_TDATA  until
-	-- the FIFO is not filled with NUMBER_OF_INPUT_WORDS number of input words.
-	axis_tready <= '1' when ((mst_exec_state = WRITE_FIFO) and (write_pointer <= NUMBER_OF_INPUT_WORDS-1)) else '0';
-
-	process(S_AXIS_ACLK)
+	
+	WriteCounterLogic : process(M_AXIS_TVALID, FifoWriteCounterxDP)
 	begin
-	  if (rising_edge (S_AXIS_ACLK)) then
-	    if(S_AXIS_ARESETN = '0') then
-	      write_pointer <= 0;
-	      writes_done <= '0';
-	    else
-	      if (write_pointer <= NUMBER_OF_INPUT_WORDS-1) then
-	        if (fifo_wren = '1') then
-	          -- write pointer is incremented after every write to the FIFO
-	          -- when FIFO write signal is enabled.
-	          write_pointer <= write_pointer + 1;
-	          writes_done <= '0';
-	        end if;
-	        if ((write_pointer = NUMBER_OF_INPUT_WORDS-1) or S_AXIS_TLAST = '1') then
-	          -- reads_done is asserted when NUMBER_OF_INPUT_WORDS numbers of streaming data 
-	          -- has been written to the FIFO which is also marked by S_AXIS_TLAST(kept for optional usage).
-	          writes_done <= '1';
-	        end if;
-	      end  if;
-	    end if;
-	  end if;
+		if(M_AXIS_TVALID = '1') then
+			if(FifoWriteCounterxDP < FIFO_COUNTER_MAX_VALUE) then
+				FifoWriteCounterxDN <= FifoWriteCounterxDP + 1;
+			else
+				FifoWriteCounterxDN <= (others => '0');
+			end if;
+		else
+			FifoWriteCounterxDN <= FifoWriteCounterxDP;
+		end if;
 	end process;
-
-	-- FIFO write enable generation
-	fifo_wren <= S_AXIS_TVALID and axis_tready;
-
-	-- FIFO Implementation
-	 FIFO_GEN: for byte_index in 0 to (C_S_AXIS_TDATA_WIDTH/8-1) generate
-
-	 signal stream_data_fifo : BYTE_FIFO_TYPE;
-	 begin   
-	  -- Streaming input data is stored in FIFO
-	  process(S_AXIS_ACLK)
-	  begin
-	    if (rising_edge (S_AXIS_ACLK)) then
-	      if (fifo_wren = '1') then
-	        stream_data_fifo(write_pointer) <= S_AXIS_TDATA((byte_index*8+7) downto (byte_index*8));
-	      end if;  
-	    end  if;
-	  end process;
-
-	end generate FIFO_GEN;
-
-	-- Add user logic here
-
-	-- User logic ends
-
+	
+	ReadCounterLogic : process(ReadFifoxSI, FifoReadCounterxDP)
+	begin
+		if(ReadFifoxSI = '1') then
+			if(FifoReadCounterxDP < FIFO_COUNTER_MAX_VALUE) then
+				FifoReadCounterxDN <= FifoReadCounterxDP + 1;
+			else
+				FifoReadCounterxDN <= (others => '0');
+			end if;
+		else
+			FifoReadCounterxDN <= FifoReadCounterxDP;
+		end if;
+	end process;
+	
+	RegisterLogic : process(S_AXIS_ACLK,S_AXIS_ARESETN)
+	begin
+		if(M_AXIS_ARESETN = '1') then
+			FifoxDP <= (others => (others => '0'));
+			FifoWriteCounterxDP <= (others => '0');
+			FifoReadCounterxDP <= (others => '0');
+		elsif(rising_edge(S_AXIS_ACLK)) then
+			FifoxDP <= FifoxDN;
+			FifoWriteCounterxDP <= FifoWriteCounterxDN;
+			FifoReadCounterxDP <= FifoReadCounterxDN;
+		end if;
+	end process;
 end arch_imp;
