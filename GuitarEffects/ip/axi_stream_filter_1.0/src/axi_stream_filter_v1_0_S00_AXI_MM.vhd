@@ -4,35 +4,24 @@ use ieee.numeric_std.all;
 
 entity axi_stream_filter_v1_0_S00_AXI_MM is
 	generic (
-		-- Users to add parameters here
 
-		-- User parameters ends
-		-- Do not modify the parameters beyond this line
-
-		-- Width of S_AXI data bus
 		C_S_AXI_DATA_WIDTH	: integer	:= 32;
-		-- Width of S_AXI address bus
 		C_S_AXI_ADDR_WIDTH	: integer	:= 4
 	);
 	port (
-		-- Users to add ports here
+
         s_axi_mm_reg_0 : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
         s_axi_mm_reg_1 : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
         s_axi_mm_reg_2 : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
         s_axi_mm_reg_3 : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-		-- User ports ends
-		-- Do not modify the ports beyond this line
+
 
 		-- Global Clock Signal
 		S_AXI_ACLK	: in std_logic;
-		-- Global Reset Signal. This Signal is Active LOW
+
 		S_AXI_ARESETN	: in std_logic;
 		-- Write address (issued by master, acceped by Slave)
 		S_AXI_AWADDR	: in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-		-- Write channel Protection type. This signal indicates the
-    		-- privilege and security level of the transaction, and whether
-    		-- the transaction is a data access or an instruction access.
-		S_AXI_AWPROT	: in std_logic_vector(2 downto 0);
 		-- Write address valid. This signal indicates that the master signaling
     		-- valid write address and control information.
 		S_AXI_AWVALID	: in std_logic;
@@ -65,9 +54,6 @@ entity axi_stream_filter_v1_0_S00_AXI_MM is
 		-- Protection type. This signal indicates the privilege
     		-- and security level of the transaction, and whether the
     		-- transaction is a data access or an instruction access.
-		S_AXI_ARPROT	: in std_logic_vector(2 downto 0);
-		-- Read address valid. This signal indicates that the channel
-    		-- is signaling valid read address and control information.
 		S_AXI_ARVALID	: in std_logic;
 		-- Read address ready. This signal indicates that the slave is
     		-- ready to accept an address and associated control signals.
@@ -118,7 +104,6 @@ architecture arch_imp of axi_stream_filter_v1_0_S00_AXI_MM is
 	signal slv_reg_rden	: std_logic;
 	signal slv_reg_wren	: std_logic;
 	signal reg_data_out	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-	signal byte_index	: integer;
 	signal aw_en	: std_logic;
 
 begin
