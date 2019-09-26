@@ -120,33 +120,33 @@ architecture RTL of tb_axi_stream_filter is
     signal axis_err_count : STD_LOGIC_VECTOR(15 DOWNTO 0);
     signal err_out        : STD_LOGIC;
 
-    signal s00_axi_stream_tready  : std_logic                                                    := '0';
-    signal s00_axi_stream_tdata   : std_logic_vector(31 downto 0)                                := (others => '0');
-    signal s00_axi_stream_tlast   : std_logic                                                    := '0';
-    signal s00_axi_stream_tvalid  : std_logic                                                    := '0';
-                                          
-    signal m00_axi_stream_tvalid  : std_logic                                                    := '0';
-    signal m00_axi_stream_tdata   : std_logic_vector(31 downto 0)                                := (others => '0');
-    signal m00_axi_stream_tlast   : std_logic                                                    := '0';
-    signal m00_axi_stream_tready  : std_logic                                                    := '0';
+    signal s00_axi_stream_tready : std_logic                     := '0';
+    signal s00_axi_stream_tdata  : std_logic_vector(31 downto 0) := (others => '0');
+    signal s00_axi_stream_tlast  : std_logic                     := '0';
+    signal s00_axi_stream_tvalid : std_logic                     := '0';
 
-    signal s00_axi_mm_awaddr      : std_logic_vector(C_S00_AXI_MM_ADDR_WIDTH - 1 downto 0)       := (others => '0');
-    signal s00_axi_mm_awvalid     : std_logic                                                    := '0';
-    signal s00_axi_mm_awready     : std_logic                                                    := '0';
-    signal s00_axi_mm_wdata       : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0)       := (others => '0');
-    signal s00_axi_mm_wstrb       : std_logic_vector((C_S00_AXI_MM_DATA_WIDTH / 8) - 1 downto 0) := (others => '0');
-    signal s00_axi_mm_wvalid      : std_logic                                                    := '0';
-    signal s00_axi_mm_wready      : std_logic                                                    := '0';
-    signal s00_axi_mm_bresp       : std_logic_vector(1 downto 0)                                 := (others => '0');
-    signal s00_axi_mm_bvalid      : std_logic                                                    := '0';
-    signal s00_axi_mm_bready      : std_logic                                                    := '0';
-    signal s00_axi_mm_araddr      : std_logic_vector(C_S00_AXI_MM_ADDR_WIDTH - 1 downto 0)       := (others => '0');
-    signal s00_axi_mm_arvalid     : std_logic                                                    := '0';
-    signal s00_axi_mm_arready     : std_logic                                                    := '0';
-    signal s00_axi_mm_rdata       : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0)       := (others => '0');
-    signal s00_axi_mm_rresp       : std_logic_vector(1 downto 0)                                 := (others => '0');
-    signal s00_axi_mm_rvalid      : std_logic                                                    := '0';
-    signal s00_axi_mm_rready      : std_logic                                                    := '0';
+    signal m00_axi_stream_tvalid : std_logic                     := '0';
+    signal m00_axi_stream_tdata  : std_logic_vector(31 downto 0) := (others => '0');
+    signal m00_axi_stream_tlast  : std_logic                     := '0';
+    signal m00_axi_stream_tready : std_logic                     := '0';
+
+    signal s00_axi_mm_awaddr  : std_logic_vector(C_S00_AXI_MM_ADDR_WIDTH - 1 downto 0)       := (others => '0');
+    signal s00_axi_mm_awvalid : std_logic                                                    := '0';
+    signal s00_axi_mm_awready : std_logic                                                    := '0';
+    signal s00_axi_mm_wdata   : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0)       := (others => '0');
+    signal s00_axi_mm_wstrb   : std_logic_vector((C_S00_AXI_MM_DATA_WIDTH / 8) - 1 downto 0) := (others => '0');
+    signal s00_axi_mm_wvalid  : std_logic                                                    := '0';
+    signal s00_axi_mm_wready  : std_logic                                                    := '0';
+    signal s00_axi_mm_bresp   : std_logic_vector(1 downto 0)                                 := (others => '0');
+    signal s00_axi_mm_bvalid  : std_logic                                                    := '0';
+    signal s00_axi_mm_bready  : std_logic                                                    := '0';
+    signal s00_axi_mm_araddr  : std_logic_vector(C_S00_AXI_MM_ADDR_WIDTH - 1 downto 0)       := (others => '0');
+    signal s00_axi_mm_arvalid : std_logic                                                    := '0';
+    signal s00_axi_mm_arready : std_logic                                                    := '0';
+    signal s00_axi_mm_rdata   : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0)       := (others => '0');
+    signal s00_axi_mm_rresp   : std_logic_vector(1 downto 0)                                 := (others => '0');
+    signal s00_axi_mm_rvalid  : std_logic                                                    := '0';
+    signal s00_axi_mm_rready  : std_logic                                                    := '0';
 
 begin
 
@@ -162,7 +162,30 @@ begin
         s_axi_aresetn <= '1';
         wait;
     end process rst;
+    
+     -- sends an AXI-MM transaction to set the reg0(0) bit.
+    i_config_for_bypass : process
+    begin
+        wait until s_axi_aresetn = '1';
+        wait for 3 us;
+        wait until rising_edge(s_axi_aclk);
+        s00_axi_mm_awaddr  <= "0000";
+        s00_axi_mm_awvalid <= '1';
+        s00_axi_mm_wdata   <= x"0000_0001";
+        s00_axi_mm_wstrb   <= x"F";
+        s00_axi_mm_wvalid  <= '1';
+        s00_axi_mm_bready  <= '1';
+        wait until rising_edge(s_axi_aclk) and s00_axi_mm_wready = '1' and s00_axi_mm_awready = '1';
+        s00_axi_mm_wdata   <= x"0000_0000";
+        s00_axi_mm_wstrb   <= x"0";
+        s00_axi_mm_wvalid  <= '0';
+        s00_axi_mm_awvalid <= '0';
+        wait until rising_edge(s_axi_aclk) and s00_axi_mm_bvalid = '1';
+        s00_axi_mm_bready  <= '0';
+        wait;
+    end process i_config_for_bypass;
 
+    -- start the checker for 20us
     i_stimuli : process
     begin
         core_ext_start <= '0';
@@ -183,8 +206,8 @@ begin
 
     i_checker : component axi_traffic_gen_0_1
         port map(
-            s_axi_awprot => (others => '0'),
-            s_axi_arprot => (others => '0'),
+            s_axi_awprot    => (others => '0'),
+            s_axi_arprot    => (others => '0'),
             s_axi_aclk      => s_axi_aclk,
             s_axi_aresetn   => s_axi_aresetn,
             core_ext_start  => core_ext_start,
@@ -243,28 +266,6 @@ begin
     s_axis_1_tvalid       <= m00_axi_stream_tvalid;
     s_axis_1_tlast        <= m00_axi_stream_tlast;
     s_axis_1_tdata        <= m00_axi_stream_tdata;
-
-    -- sends an AXI-MM transaction to set the reg0(0) bit.
-    i_config_for_bypass : process
-    begin
-        wait until s_axi_aresetn = '1';
-        wait for 3 us;
-        wait until rising_edge(s_axi_aclk);
-        s00_axi_mm_awaddr  <= "0000";
-        s00_axi_mm_awvalid <= '1';
-        s00_axi_mm_wdata   <= x"0000_0001";
-        s00_axi_mm_wstrb <= x"F";
-        s00_axi_mm_wvalid  <= '1';
-        s00_axi_mm_bready  <= '1';
-        wait until rising_edge(s_axi_aclk) and s00_axi_mm_wready = '1' and s00_axi_mm_awready = '1';
-        s00_axi_mm_wdata   <= x"0000_0000";
-        s00_axi_mm_wstrb <= x"0";
-        s00_axi_mm_wvalid  <= '0';
-        s00_axi_mm_awvalid <= '0';
-        wait until rising_edge(s_axi_aclk) and s00_axi_mm_bvalid = '1';
-        s00_axi_mm_bready  <= '0';
-        wait;
-    end process i_config_for_bypass;
 
     i_dut : axi_stream_filter_v1_0
         generic map(
