@@ -1,22 +1,29 @@
+-------------------------------------------------------------------------------
+-- Project name      : ZE_DESIGN_RESSOURCES
+-- Project number    : -
+-- Customer          : -
+--
+-- Language / Version: Uses Xilinx Primitives
+--
+-- Author            : ster
+-- Version           : 1.0
+-- Date              : 26.09.2019
+-------------------------------------------------------------------------------
+-- Description :       Generic AXI Stream Filter 
+--
+-------------------------------------------------------------------------------
+-- Modifications :
+-------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity axi_stream_filter_v1_0 is
     generic(
-        -- Users to add parameters here
-
-        -- User parameters ends
-        -- Do not modify the parameters beyond this line
-
-        -- Parameters of Axi Slave Bus Interface S00_AXI_STREAM
-        C_S00_AXI_STREAM_TDATA_WIDTH : integer := 32;
-        -- Parameters of Axi Master Bus Interface M00_AXI_STREAM
-        C_M00_AXI_STREAM_TDATA_WIDTH : integer := 32;
-        C_M00_AXI_STREAM_START_COUNT : integer := 32;
         -- Parameters of Axi Slave Bus Interface S00_AXI_MM
-        C_S00_AXI_MM_DATA_WIDTH      : integer := 32;
-        C_S00_AXI_MM_ADDR_WIDTH      : integer := 4
+        C_S00_AXI_MM_DATA_WIDTH : integer := 32;
+        C_S00_AXI_MM_ADDR_WIDTH : integer := 4
     );
     port(
         -- Users to add ports here
@@ -28,16 +35,14 @@ entity axi_stream_filter_v1_0 is
         s00_axi_stream_aclk    : in  std_logic;
         s00_axi_stream_aresetn : in  std_logic;
         s00_axi_stream_tready  : out std_logic;
-        s00_axi_stream_tdata   : in  std_logic_vector(C_S00_AXI_STREAM_TDATA_WIDTH - 1 downto 0);
-        s00_axi_stream_tstrb   : in  std_logic_vector((C_S00_AXI_STREAM_TDATA_WIDTH / 8) - 1 downto 0);
+        s00_axi_stream_tdata   : in  std_logic_vector(31 downto 0);
         s00_axi_stream_tlast   : in  std_logic;
         s00_axi_stream_tvalid  : in  std_logic;
         -- Ports of Axi Master Bus Interface M00_AXI_STREAM
         m00_axi_stream_aclk    : in  std_logic;
         m00_axi_stream_aresetn : in  std_logic;
         m00_axi_stream_tvalid  : out std_logic;
-        m00_axi_stream_tdata   : out std_logic_vector(C_M00_AXI_STREAM_TDATA_WIDTH - 1 downto 0);
-        m00_axi_stream_tstrb   : out std_logic_vector((C_M00_AXI_STREAM_TDATA_WIDTH / 8) - 1 downto 0);
+        m00_axi_stream_tdata   : out std_logic_vector(31 downto 0);
         m00_axi_stream_tlast   : out std_logic;
         m00_axi_stream_tready  : in  std_logic;
         -- Ports of Axi Slave Bus Interface S00_AXI_MM
@@ -67,10 +72,7 @@ end axi_stream_filter_v1_0;
 
 architecture arch_imp of axi_stream_filter_v1_0 is
 
-    signal s_axi_mm_reg_0 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH-1 downto 0);
-    signal s_axi_mm_reg_1 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH-1 downto 0);
-    signal s_axi_mm_reg_2 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH-1 downto 0);
-    signal s_axi_mm_reg_3 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH-1 downto 0);
+    
 
     -- component declaration
     component axi_stream_filter_v1_0_S00_AXI_STREAM is
@@ -82,28 +84,48 @@ architecture arch_imp of axi_stream_filter_v1_0 is
             S_AXIS_ARESETN : in  std_logic;
             S_AXIS_TREADY  : out std_logic;
             S_AXIS_TDATA   : in  std_logic_vector(C_S_AXIS_TDATA_WIDTH - 1 downto 0);
-            S_AXIS_TSTRB   : in  std_logic_vector((C_S_AXIS_TDATA_WIDTH / 8) - 1 downto 0);
             S_AXIS_TLAST   : in  std_logic;
             S_AXIS_TVALID  : in  std_logic
         );
     end component axi_stream_filter_v1_0_S00_AXI_STREAM;
 
+    -- AXI STREAM MASTER 
+    constant c_AXI_S_TDATA_WIDTH : integer := 32;
+    signal fifo_out_din          : std_logic_vector(63 downto 0);
+    signal fifo_out_wr           : std_logic;
+    signal fifo_out_empty        : std_logic;
+    signal fifo_out_almost_full  : std_logic;
+    signal fifo_out_wr_ack       : std_logic;
+    signal M_AXIS_ACLK           : std_logic;
+    signal M_AXIS_ARESETN        : std_logic;
+    signal M_AXIS_TVALID         : std_logic;
+    signal M_AXIS_TDATA          : std_logic_vector(c_AXI_S_TDATA_WIDTH - 1 downto 0);
+    signal M_AXIS_TLAST          : std_logic;
+    signal M_AXIS_TREADY         : std_logic;
+
     component axi_stream_master
-        generic(C_M_AXIS_TDATA_WIDTH : integer);
+        generic(g_axi_data_width : integer);
         port(
-            fifo_din         : in  std_logic_vector(63 downto 0);
+            fifo_din         : in  std_logic_vector(31 downto 0);
             fifo_wr          : in  std_logic;
+            fifo_wr_ack      : out std_logic;
             fifo_empty       : out std_logic;
             fifo_almost_full : out std_logic;
             M_AXIS_ACLK      : in  std_logic;
             M_AXIS_ARESETN   : in  std_logic;
             M_AXIS_TVALID    : out std_logic;
-            M_AXIS_TDATA     : out std_logic_vector(C_M_AXIS_TDATA_WIDTH - 1 downto 0);
+            M_AXIS_TDATA     : out std_logic_vector(g_axi_data_width - 1 downto 0);
             M_AXIS_TLAST     : out std_logic;
             M_AXIS_TREADY    : in  std_logic
         );
     end component axi_stream_master;
 
+
+    signal s_axi_mm_reg_0 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0);
+    signal s_axi_mm_reg_1 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0);
+    signal s_axi_mm_reg_2 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0);
+    signal s_axi_mm_reg_3 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0);
+    
     component axi_stream_filter_v1_0_S00_AXI_MM
         generic(
             C_S_AXI_DATA_WIDTH : integer;
@@ -137,24 +159,27 @@ architecture arch_imp of axi_stream_filter_v1_0 is
             S_AXI_RREADY   : in  std_logic
         );
     end component axi_stream_filter_v1_0_S00_AXI_MM;
-    signal fifo_din : std_logic_vector(63 downto 0);
-    signal fifo_wr : std_logic;
-    signal fifo_empty : std_logic;
-    signal fifo_almost_full : std_logic;
+    
+
+    signal clk                   : std_logic;
+
+    type state is (IDLE,                -- This is the initial/idle state 
+                   TRANSFER_DATA,
+                   WAIT_FOR_ACK);       -- In this state the                               
+    signal bypass_copy_state : state := IDLE;
 
 begin
 
     -- Instantiation of Axi Bus Interface S00_AXI_STREAM
     axi_stream_filter_v1_0_S00_AXI_STREAM_inst : axi_stream_filter_v1_0_S00_AXI_STREAM
         generic map(
-            C_S_AXIS_TDATA_WIDTH => C_S00_AXI_STREAM_TDATA_WIDTH
+            C_S_AXIS_TDATA_WIDTH => c_AXI_S_TDATA_WIDTH
         )
         port map(
             S_AXIS_ACLK    => s00_axi_stream_aclk,
             S_AXIS_ARESETN => s00_axi_stream_aresetn,
             S_AXIS_TREADY  => s00_axi_stream_tready,
             S_AXIS_TDATA   => s00_axi_stream_tdata,
-            S_AXIS_TSTRB   => s00_axi_stream_tstrb,
             S_AXIS_TLAST   => s00_axi_stream_tlast,
             S_AXIS_TVALID  => s00_axi_stream_tvalid
         );
@@ -162,19 +187,20 @@ begin
     -- Instantiation of Axi Bus Interface M00_AXI_STREAM
     axi_stream_filter_v1_0_M00_AXI_STREAM_inst : axi_stream_master
         generic map(
-            C_M_AXIS_TDATA_WIDTH => 32
+            g_axi_data_width => c_AXI_S_TDATA_WIDTH
         )
         port map(
-            fifo_din         => fifo_din,
-            fifo_wr          => fifo_wr,
-            fifo_empty       => fifo_empty,
-            fifo_almost_full => fifo_almost_full,
-            M_AXIS_ACLK      => m00_axi_stream_aclk,
-            M_AXIS_ARESETN   => m00_axi_stream_aresetn,
-            M_AXIS_TVALID    => m00_axi_stream_tvalid,
-            M_AXIS_TDATA     => m00_axi_stream_tdata,
-            M_AXIS_TLAST     => m00_axi_stream_tlast,
-            M_AXIS_TREADY    => m00_axi_stream_tready
+            fifo_din         => fifo_out_din,
+            fifo_wr          => fifo_out_wr,
+            fifo_wr_ack      => fifo_out_wr_ack,
+            fifo_empty       => fifo_out_empty,
+            fifo_almost_full => fifo_out_almost_full,
+            M_AXIS_ACLK      => M_AXIS_ACLK,
+            M_AXIS_ARESETN   => M_AXIS_ARESETN,
+            M_AXIS_TVALID    => M_AXIS_TVALID,
+            M_AXIS_TDATA     => M_AXIS_TDATA,
+            M_AXIS_TLAST     => M_AXIS_TLAST,
+            M_AXIS_TREADY    => M_AXIS_TREADY
         );
 
     -- Instantiation of Axi Bus Interface S00_AXI_MM
@@ -211,8 +237,41 @@ begin
             S_AXI_RREADY   => s00_axi_mm_rready
         );
 
-        -- Add user logic here
-        
-        -- User logic ends
+    clk <= s00_axi_stream_aclk;
+    -- Add user logic here
+    bypass : process(s00_axi_stream_aclk)
+    begin
+        if rising_edge(s00_axi_stream_aclk) then
+            
+            if (s00_axi_stream_aresetn = '0') then
+                bypass_copy_state <= IDLE;
+            elsif s_axi_mm_reg_0(0) = '1' then
+                case (bypass_copy_state) is
+                    when IDLE =>
+                        if (fifo_out_almost_full = '0') AND (fifo_in_empty = '0') then
+                            bypass_copy_state <= TRANSFER_DATA;
+                            fifo_in_rd        <= '1';
+                        end if;
+                    when TRANSFER_DATA =>
+                        if (fifo_in_valid = '1') then
+                            fifo_out_din      <= fifo_in_dout;
+                            fifo_out_wr       <= '1';
+                            bypass_copy_state <= WAIT_FOR_ACK;
+                        else
+                            fifo_in_rd        <= '1';
+                        end if;
+
+                    when WAIT_FOR_ACK =>
+                        if (fifo_out_wr_ack = '1') then
+                            bypass_copy_state <= IDLE;
+                        end if;
+                    when others =>
+                        bypass_copy_state <= IDLE;
+                end case;
+            end if;
+        end if;
+    end process bypass;
+
+    -- User logic ends
 
 end arch_imp;
