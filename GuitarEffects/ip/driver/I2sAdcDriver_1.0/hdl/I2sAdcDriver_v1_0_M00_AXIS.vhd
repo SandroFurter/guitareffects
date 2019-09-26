@@ -92,10 +92,11 @@ architecture implementation of I2sAdcDriver_v1_0_M00_AXIS is
 begin
 	-- I/O Connections assignments
 
-	M_AXIS_TVALID	<= '1' when AxiMasterStatexDP /= STANDBY;
+	M_AXIS_TVALID	<= '1' when AxiMasterStatexDP /= STANDBY else '0';
 	M_AXIS_TDATA	<= (C_M_AXIS_TDATA_WIDTH - 1 downto AUDIO_DATA_WIDTH => '0') & LeftDataxDP when LeftDataSentxSP = '0' else (C_M_AXIS_TDATA_WIDTH - 1 downto AUDIO_DATA_WIDTH => '0') & RightDataxDP;
-	M_AXIS_TLAST	<= LeftDataSentxSP;
+	M_AXIS_TLAST	<= '1' when LeftDataSentxSP = '1' and AxiMasterStatexDP /= STANDBY else '0';
 	M_AXIS_TSTRB	<= (others => '1');
+	
 
 	AD_MCLK <= '1' when MclkCounterxDP > to_unsigned(to_integer(MCLK_FREQUENCY_COUNTER_MAXVALUE) / 2, MCLK_FREQUENCY_COUNTER_WIDTH) else '0';
     
@@ -111,7 +112,7 @@ begin
                                
     ReadDataxS <= '1' when SclkCounterxDP = to_unsigned(to_integer(SCLK_FREQUENCY_COUNTER_MAXVALUE) / 2, SCLK_FREQUENCY_COUNTER_WIDTH) and (I2SDriverStatexDP = SENDLEFTDATA or I2SDriverStatexDP = SENDRIGHTDATA) else '0';
     
-    SendDataxS <= '1' when I2SDriverStatexDP = SENDLEFTDATA and LrclkCounterxDP = LRCLK_FREQUENCY_COUNTER_MAXVALUE else '0';
+    SendDataxS <= '1' when I2SDriverStatexDP = WAITFORLEFTDATA and LrclkCounterxDP = LRCLK_FREQUENCY_COUNTER_MAXVALUE else '0';
     
     DataCounterLogic : process(I2SDriverStatexDP, DataCounterxDP, ReadDataxS)
     begin
@@ -142,12 +143,15 @@ begin
     begin
     	case AxiMasterStatexDP is 
     		when STANDBY =>
+    			LeftDataSentxSN <= '0';
     			if(SendDataxS = '1') then
     				if(M_AXIS_TREADY = '1') then
     					AxiMasterStatexDN <= SENDDATA;
     				else
     					AxiMasterStatexDN <= WAITFORSLAVE;
     				end if;
+    			else
+    				AxiMasterStatexDN <= STANDBY;
     			end if;    					
     		when WAITFORSLAVE =>
     			if(M_AXIS_TREADY = '1') then
@@ -155,7 +159,9 @@ begin
     			else
     				AxiMasterStatexDN <= WAITFORSLAVE;
     			end if;
+    			LeftDataSentxSN <= LeftDataSentxSP;
     		when SENDDATA =>
+    			LeftDataSentxSN <= '1';
     			if(LeftDataSentxSP = '1') then
     				AxiMasterStatexDN <= STANDBY;
     			else
@@ -218,6 +224,8 @@ begin
             SclkCounterxDP <= (others => '0');
             LeftDataxDP <= (others => '0');
             RightDataxDP <= (others => '0');
+            LeftDataSentxSP <= '0';
+            AxiMasterStatexDP <= STANDBY;
         elsif(rising_edge(M_AXIS_ACLK)) then
             I2SDriverStatexDP <= I2SDriverStatexDN;
             DataCounterxDP <= DataCounterxDN;
@@ -226,6 +234,8 @@ begin
             SclkCounterxDP <= SclkCounterxDN;
             LeftDataxDP <= LeftDataxDN;
             RightDataxDP <= RightDataxDN;
+            LeftDataSentxSP <= LeftDataSentxSN;
+            AxiMasterStatexDP <= AxiMasterStatexDN;
         end if;
     end process;
 end implementation;

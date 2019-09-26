@@ -84,7 +84,7 @@ architecture arch_imp of I2sDacDriver_v1_0_S00_AXIS is
     
     signal TValidLastStatexDP, TValidLastStatexDN : std_logic;
 begin
-	S_AXIS_TREADY <= '1' when I2SDriverStatexDP = STANDBY else '0';
+	S_AXIS_TREADY <= '1' when I2SDriverStatexDP = STANDBY and S_AXIS_ARESETN = '1' else '0';
     
     DA_MCLK <= '1' when MclkCounterxDP > to_unsigned(to_integer(MCLK_FREQUENCY_COUNTER_MAXVALUE) / 2, MCLK_FREQUENCY_COUNTER_WIDTH) else '0';
     
@@ -105,7 +105,7 @@ begin
  
     TValidLastStatexDN <= S_AXIS_TVALID;
     
-    WriteDataxS <= '1' when TvalidLastStatexDP = '1' and S_AXIS_TVALID = '0' else '0';
+    WriteDataxS <= S_AXIS_TLAST and S_AXIS_TVALID;
     
     LeftDataxDN <= S_AXIS_TDATA(AUDIO_DATA_WIDTH - 1 downto 0) when S_AXIS_TVALID = '1' and S_AXIS_TLAST = '0' else LeftDataxDP;
     RightDataxDN <= S_AXIS_TDATA(AUDIO_DATA_WIDTH - 1 downto 0) when S_AXIS_TVALID = '1' and S_AXIS_TLAST = '1' else RightDataxDP;
