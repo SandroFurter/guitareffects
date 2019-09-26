@@ -72,7 +72,14 @@ end axi_stream_filter_v1_0;
 
 architecture arch_imp of axi_stream_filter_v1_0 is
 
-    
+    constant c_AXI_S_TDATA_WIDTH : integer := 32;
+
+    -- STREAM INPUT
+    -- AXI STREAM SLAVE
+    signal fifo_in_rd : std_logic;
+    signal fifo_in_valid : std_logic;
+    signal fifo_in_dout : std_logic_vector(63 downto 0);
+    signal fifo_in_empty : std_logic;
 
     -- component declaration
     component axi_stream_filter_v1_0_S00_AXI_STREAM is
@@ -89,8 +96,8 @@ architecture arch_imp of axi_stream_filter_v1_0 is
         );
     end component axi_stream_filter_v1_0_S00_AXI_STREAM;
 
+    -- STREAM OUTPUT
     -- AXI STREAM MASTER 
-    constant c_AXI_S_TDATA_WIDTH : integer := 32;
     signal fifo_out_din          : std_logic_vector(63 downto 0);
     signal fifo_out_wr           : std_logic;
     signal fifo_out_empty        : std_logic;
@@ -120,7 +127,8 @@ architecture arch_imp of axi_stream_filter_v1_0 is
         );
     end component axi_stream_master;
 
-
+    -- AXI Configuration
+    -- AXI MM
     signal s_axi_mm_reg_0 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0);
     signal s_axi_mm_reg_1 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0);
     signal s_axi_mm_reg_2 : std_logic_vector(C_S00_AXI_MM_DATA_WIDTH - 1 downto 0);
@@ -167,6 +175,7 @@ architecture arch_imp of axi_stream_filter_v1_0 is
                    TRANSFER_DATA,
                    WAIT_FOR_ACK);       -- In this state the                               
     signal bypass_copy_state : state := IDLE;
+
 
 begin
 
