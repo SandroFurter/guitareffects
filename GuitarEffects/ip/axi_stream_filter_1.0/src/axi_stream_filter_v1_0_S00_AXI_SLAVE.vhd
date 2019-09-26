@@ -63,14 +63,16 @@ architecture arch_imp of axi_stream_filter_v1_0_S00_AXI_STREAM is
     signal FifoAlmostFullxS : std_logic;
     signal FifoFullxS : std_logic;
     signal FifoDataCountxD : std_logic_vector(3 downto 0);
-    
+    signal FifoResetxS : std_logic;
 begin
-	S_AXIS_TREADY <= not(FifoAlmostFullxS);
-
+	S_AXIS_TREADY <= not(FifoAlmostFullxS) and S_AXIS_ARESETN;
+    
+    FifoResetxS <= not(S_AXIS_ARESETN);
+    
 	o_fifo : native_fifo_32bx16
         port map(
             clk         => S_AXIS_ACLK,
-            rst         => S_AXIS_ARESETN,
+            rst         => FifoResetxS,
             din         => S_AXIS_TDATA,
             wr_en       => S_AXIS_TVALID,
             rd_en       => ReadFifoxSI,
