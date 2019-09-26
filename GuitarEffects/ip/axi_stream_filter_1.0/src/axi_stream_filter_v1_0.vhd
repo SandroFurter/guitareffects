@@ -73,7 +73,7 @@ architecture arch_imp of axi_stream_filter_v1_0 is
     -- AXI STREAM SLAVE
     signal fifo_in_rd    : std_logic;
     signal fifo_in_valid : std_logic;
-    signal fifo_in_dout  : std_logic_vector(63 downto 0);
+    signal fifo_in_dout  : std_logic_vector(31 downto 0);
     signal fifo_in_empty : std_logic;
 
     -- component declaration
@@ -96,7 +96,7 @@ architecture arch_imp of axi_stream_filter_v1_0 is
 
     -- STREAM OUTPUT
     -- AXI STREAM MASTER 
-    signal fifo_out_din         : std_logic_vector(63 downto 0);
+    signal fifo_out_din         : std_logic_vector(31 downto 0);
     signal fifo_out_wr          : std_logic;
     signal fifo_out_empty       : std_logic;
     signal fifo_out_almost_full : std_logic;
@@ -194,6 +194,7 @@ begin
     S_AXIS_TDATA          <= s00_axi_stream_tdata;
     S_AXIS_TLAST          <= s00_axi_stream_tlast;
     S_AXIS_TVALID         <= s00_axi_stream_tvalid;
+    
 
     axi_stream_filter_v1_0_S00_AXI_STREAM_inst : axi_stream_filter_v1_0_S00_AXI_STREAM
         generic map(
@@ -277,6 +278,11 @@ begin
 
     -- INSERT CUSTOM FILTER HERE
     -- BYPASS AS REFERENCE
+    
+    ReadFifoxSI <= fifo_in_rd;
+    fifo_in_empty <= FifoEmptyxSO;
+    fifo_in_valid <= FifoDataValidxSO;
+    fifo_in_dout <= FifoDataxDO;
 
     clk <= s00_axi_stream_aclk;
     bypass : process(s00_axi_stream_aclk)
