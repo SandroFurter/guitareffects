@@ -157,17 +157,17 @@ if {[string equal [get_filesets -quiet sources_1] ""]} {
 # Set 'sources_1' fileset object
 set obj [get_filesets sources_1]
 set files [list \
- [file normalize "${origin_dir}/../ip/native_fifo_32bx16/native_fifo_32bx16.xci"] \
- [file normalize "${origin_dir}/../src/axi_stream_filter_v1_0_S00_AXI_MM.vhd"] \
- [file normalize "${origin_dir}/../src/axi_stream_filter_v1_0_S00_AXI_SLAVE.vhd"] \
- [file normalize "${origin_dir}/../src/axi_stream_master.vhd"] \
- [file normalize "${origin_dir}/../src/axi_stream_filter_v1_0.vhd"] \
- [file normalize "${origin_dir}/../sim/axi_traffic_gen_0_1/axi_traffic_gen_0_1.xci"] \
+ [file normalize "$origin_dir/./ip/native_fifo_32bx16/native_fifo_32bx16.xci"] \
+ [file normalize "$origin_dir/./src/axi_stream_filter_v1_0_S00_AXI_MM.vhd"] \
+ [file normalize "$origin_dir/./src/axi_stream_filter_v1_0_S00_AXI_SLAVE.vhd"] \
+ [file normalize "$origin_dir/./src/axi_stream_master.vhd"] \
+ [file normalize "$origin_dir/./src/axi_stream_filter_v1_0.vhd"] \
+ [file normalize "$origin_dir/./sim/axi_traffic_gen_0_1/axi_traffic_gen_0_1.xci"] \
 ]
 add_files -norecurse -fileset $obj $files
 
 # Set 'sources_1' fileset file properties for remote files
-set file "$origin_dir/../ip/native_fifo_32bx16/native_fifo_32bx16.xci"
+set file "$origin_dir/./ip/native_fifo_32bx16/native_fifo_32bx16.xci"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property -name "generate_files_for_reference" -value "0" -objects $file_obj
@@ -176,27 +176,27 @@ if { ![get_property "is_locked" $file_obj] } {
   set_property -name "synth_checkpoint_mode" -value "Singular" -objects $file_obj
 }
 
-set file "$origin_dir/../src/axi_stream_filter_v1_0_S00_AXI_MM.vhd"
+set file "$origin_dir/./src/axi_stream_filter_v1_0_S00_AXI_MM.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property -name "file_type" -value "VHDL" -objects $file_obj
 
-set file "$origin_dir/../src/axi_stream_filter_v1_0_S00_AXI_SLAVE.vhd"
+set file "$origin_dir/./src/axi_stream_filter_v1_0_S00_AXI_SLAVE.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property -name "file_type" -value "VHDL" -objects $file_obj
 
-set file "$origin_dir/../src/axi_stream_master.vhd"
+set file "$origin_dir/./src/axi_stream_master.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property -name "file_type" -value "VHDL" -objects $file_obj
 
-set file "$origin_dir/../src/axi_stream_filter_v1_0.vhd"
+set file "$origin_dir/./src/axi_stream_filter_v1_0.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property -name "file_type" -value "VHDL" -objects $file_obj
 
-set file "$origin_dir/../sim/axi_traffic_gen_0_1/axi_traffic_gen_0_1.xci"
+set file "$origin_dir/./sim/axi_traffic_gen_0_1/axi_traffic_gen_0_1.xci"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file"]]
 set_property -name "generate_files_for_reference" -value "0" -objects $file_obj
@@ -234,13 +234,13 @@ if {[string equal [get_filesets -quiet sim_1] ""]} {
 # Set 'sim_1' fileset object
 set obj [get_filesets sim_1]
 set files [list \
- [file normalize "${origin_dir}/../sim/tb_axi_stream_filter.vhd"] \
- [file normalize "${origin_dir}/../sim/tb_axi_stream_filter_behav.wcfg"] \
+ [file normalize "$origin_dir/./sim/tb_axi_stream_filter.vhd"] \
+ [file normalize "$origin_dir/./sim/tb_axi_stream_filter_behav.wcfg"] \
 ]
 add_files -norecurse -fileset $obj $files
 
 # Set 'sim_1' fileset file properties for remote files
-set file "$origin_dir/../sim/tb_axi_stream_filter.vhd"
+set file "$origin_dir/./sim/tb_axi_stream_filter.vhd"
 set file [file normalize $file]
 set file_obj [get_files -of_objects [get_filesets sim_1] [list "*$file"]]
 set_property -name "file_type" -value "VHDL" -objects $file_obj
